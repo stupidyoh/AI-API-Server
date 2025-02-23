@@ -3,25 +3,45 @@ from fastapi import FastAPI
 
 import model
 
-and_model = model.AndModel()
-
 app = FastAPI()
+
+# 모델 인스턴스 저장
+models = {}
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return {"HW5": "Training and Test for Logical Operation[NOT, AND, OR, NAND, NOR, XOR, XNOR]"}
 
-# @app.get("/items/{item_id}")
-# def read_item(item_id: int, q: Union[str, None] = None):
-#     return {"item_id": item_id, "q": q}
+@app.get("/training")
+def train_model():
+    # Training SLP
+    for logic in ["NOT", "AND", "OR", "NAND", "NOR"]:
+        models[logic] = model.SLPModel(logic)
+        models[logic].training_model()
+        print(f"Training well for {logic}")
 
-@app.get("/train")
-def train():
-    and_model.train()
+    # Training MLP
+    for logic in ["XOR", "XNOR"]:
+        models[logic] = model.MLPModel(logic)
+        models[logic].training_model()
+        print(f"Training well for {logic}")
+
+    print("Trained models: ", models)
+        
     return {"Result": 'OK'}
 
-@app.get("/predict/left/{left_id}/right/{right_id}")
-def predict(left_id: int, right_id: int):
-    result = and_model.predict([left_id, right_id])
+# /predict/NOT?x=1
+# /predict/NOR?x=0&y=1
+@app.get("/predict/{logic}")
+def predict(logic: str, x: int, y: Union[int, None] = None):
+    # 학습된 모델이 아닌 경우
+    if logic not in models:
+        return {"error": "Invalid logic gate"}
+
+    # 학습된 모델에 대한 결과 출력
+    if logic == "NOT":
+        result = models[logic].predict([x])
+    else:
+        result = models[logic].predict([x, y])
     return {"result": result}
 
